@@ -46,7 +46,6 @@ Continuous control inputs are:
     - control thruster (left/right)
 """
 
-CONTINUOUS = True
 VEL_STATE = True  # Add velocity info to state
 FPS = 60
 SCALE_S = 0.35  # Temporal Scaling, lower is faster - adjust forces appropriately
@@ -114,10 +113,12 @@ class ContactDetector(contactListener):
 class RocketLander(gym.Env):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": FPS}
 
-    def __init__(self):
+    def __init__(self, continuous=False):
         self._seed()
         self.viewer = None
         self.episode_number = 0
+
+        self.continuous = continuous
 
         self.world = Box2D.b2World()
         self.water = None
@@ -134,7 +135,7 @@ class RocketLander(gym.Env):
 
         self.observation_space = spaces.Box(low, high, dtype=np.float32)
 
-        if CONTINUOUS:
+        if self.continuous:
             self.action_space = spaces.Box(-1.0, +1.0, (3,), dtype=np.float32)
         else:
             self.action_space = spaces.Discrete(7)
@@ -343,7 +344,7 @@ class RocketLander(gym.Env):
             self.legs + [self.water] + [self.ship] + self.containers + [self.lander]
         )
 
-        if CONTINUOUS:
+        if self.continuous:
             return self.step([0, 0, 0])[0]
         else:
             return self.step(6)[0]
@@ -352,7 +353,7 @@ class RocketLander(gym.Env):
 
         self.force_dir = 0
 
-        if CONTINUOUS:
+        if self.continuous:
             np.clip(action, -1, 1)
             self.gimbal += action[0] * 0.15 / FPS
             self.throttle += action[1] * 0.5 / FPS
