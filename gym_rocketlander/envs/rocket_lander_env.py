@@ -49,7 +49,7 @@ Continuous control inputs are:
 VEL_STATE = True  # Add velocity info to state
 FPS = 60
 SCALE_S = 0.35  # Temporal Scaling, lower is faster - adjust forces appropriately
-INITIAL_RANDOM = 0.4  # Random scaling of initial velocity, higher is more difficult
+INITIAL_RANDOM = 0.0  # Random scaling of initial velocity, higher is more difficult
 
 START_HEIGHT = 800.0
 START_SPEED = 80.0
