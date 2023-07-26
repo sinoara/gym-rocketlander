@@ -168,7 +168,6 @@ class RocketLander(gym.Env):
         self.world.contactListener_keepref = ContactDetector(self)
         self.world.contactListener = self.world.contactListener_keepref
         self.game_over = False
-        self.prev_shaping = None
         self.throttle = 0
         self.gimbal = 0.0
         self.landed_ticks = 0
@@ -453,11 +452,10 @@ class RocketLander(gym.Env):
             reward = -100.0
         else:
             # reward shaping
-            shaping = -0.5 * (distance + speed + abs(angle) ** 2 + abs(vel_a) ** 2)
-            shaping += 0.1 * (self.legs[0].ground_contact + self.legs[1].ground_contact)
-            if self.prev_shaping is not None:
-                reward += shaping - self.prev_shaping
-            self.prev_shaping = shaping
+            shaping = -(distance + speed + abs(angle) ** 2 + abs(vel_a) ** 2)
+            shaping += (self.legs[0].ground_contact + self.legs[1].ground_contact)
+
+            reward += shaping
 
             if landed:
                 self.landed_ticks += 1
