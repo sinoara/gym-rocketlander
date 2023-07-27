@@ -452,7 +452,7 @@ class RocketLander(gym.Env):
             reward = -100.0
         else:
             # reward shaping
-            shaping = -(distance + speed + abs(angle) ** 2 + abs(vel_a) ** 2)
+            shaping = -(distance + 0.1*speed + abs(angle) ** 2 + abs(vel_a) ** 2)
             shaping += (self.legs[0].ground_contact + self.legs[1].ground_contact)
 
             reward += shaping
