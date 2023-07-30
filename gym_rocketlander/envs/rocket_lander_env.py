@@ -7,10 +7,10 @@ from Box2D.b2 import (
     distanceJointDef,
     contactListener,
 )
-import gym
-from gym import spaces
-from gym.utils import seeding
-from gym.envs.classic_control import rendering
+import gymnasium as gym
+from gymnasium import spaces
+from gymnasium.utils import seeding
+from gymnasium.envs.classic_control import rendering
 
 """
 The objective of this environment is to land a rocket on a ship.
