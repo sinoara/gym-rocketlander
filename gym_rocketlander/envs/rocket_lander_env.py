@@ -449,7 +449,12 @@ class RocketLander(gym.Env):
 
         reward = -fuelcost
 
+        self.stepnumber += 1
+
         if outside or brokenleg:
+            self.game_over = True
+
+        if self.stepnumber > 1000:
             self.game_over = True
 
         if self.game_over:
@@ -478,7 +483,6 @@ class RocketLander(gym.Env):
 
         # REWARD -------------------------------------------------------------------------------------------------------
 
-        self.stepnumber += 1
 
         return np.array(state, dtype=np.float32), reward, terminated, truncated, {}
 
