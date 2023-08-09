@@ -10,7 +10,6 @@ from Box2D.b2 import (
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.utils import seeding
-from gymnasium.envs.classic_control import rendering
 
 """
 The objective of this environment is to land a rocket on a ship.
@@ -111,7 +110,10 @@ class ContactDetector(contactListener):
 
 
 class RocketLander(gym.Env):
-    metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": FPS}
+    metadata = {
+            "render_modes": ["human", "rgb_array"],
+            "render_fps": FPS,
+            }
 
     def __init__(self, continuous=False):
         self._seed()
@@ -476,12 +478,42 @@ class RocketLander(gym.Env):
 
         return np.array(state), reward, done, {}
 
-    def render(self, mode="human", close=False):
+    def render(self, close=False):
+
         if close:
             if self.viewer is not None:
                 self.viewer.close()
                 self.viewer = None
             return
+
+        if self.render_mode is None:
+            gym.logger.warn(
+                "You are calling render method without specifying any render mode. "
+                "You can specify the render_mode at initialization, "
+                f'e.g. gym("{self.spec.id}", render_mode="rgb_array")'
+            )
+            return
+
+        try:
+            import pygame
+            from pygame import gfxdraw
+        except ImportError:
+            raise DependencyNotInstalled(
+                "pygame is not installed, run `pip install gym[box2d]`"
+            )
+
+        if self.screen is None and self.render_mode == "human":
+            pygame.init()
+            pygame.display.init()
+            self.screen = pygame.display.set_mode((VIEWPORT_W, VIEWPORT_H))
+        if self.clock is None:
+            self.clock = pygame.time.Clock()
+
+        self.surf = pygame.Surface((VIEWPORT_W, VIEWPORT_H))
+
+        pygame.transform.scale(self.surf, (SCALE, SCALE))
+        pygame.draw.rect(self.surf, (255, 255, 255), self.surf.get_rect())
+        ######################
 
         if self.viewer is None:
 
