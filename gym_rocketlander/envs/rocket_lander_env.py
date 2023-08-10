@@ -165,7 +165,8 @@ class RocketLander(gym.Env):
         self.world.DestroyBody(self.containers[1])
         self.containers = []
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         self._destroy()
         self.world.contactListener_keepref = ContactDetector(self)
         self.world.contactListener = self.world.contactListener_keepref
@@ -346,9 +347,9 @@ class RocketLander(gym.Env):
         )
 
         if self.continuous:
-            return self.step([0, 0, 0])[0]
+            return self.step([0, 0, 0])[0], {}
         else:
-            return self.step(6)[0]
+            return self.step(6)[0], {}
 
     def step(self, action):
 
@@ -442,7 +443,8 @@ class RocketLander(gym.Env):
         landed = (
             self.legs[0].ground_contact and self.legs[1].ground_contact and speed < 0.1
         )
-        done = False
+        terminated = False
+        truncated = False
 
         reward = -fuelcost
 
@@ -450,7 +452,7 @@ class RocketLander(gym.Env):
             self.game_over = True
 
         if self.game_over:
-            done = True
+            terminated = True
             reward = -100.0
         else:
             # reward shaping
@@ -465,9 +467,9 @@ class RocketLander(gym.Env):
                 self.landed_ticks = 0
             if self.landed_ticks == FPS:
                 reward = 1000.0
-                done = True
+                terminated = True
 
-        if done:
+        if terminated:
             reward += max(-1, 0 - 2 * (speed + distance + abs(angle) + abs(vel_a)))
 
         #reward = np.clip(reward, -1, 1)
@@ -476,7 +478,7 @@ class RocketLander(gym.Env):
 
         self.stepnumber += 1
 
-        return np.array(state), reward, done, {}
+        return np.array(state, dtype=np.float32), reward, terminated, truncated, {}
 
     def render(self, close=False):
 
