@@ -347,9 +347,11 @@ class RocketLander(gym.Env):
         )
 
         if self.continuous:
-            return self.step([0, 0, 0])[0], {}
+            step_return = self.step([0, 0, 0])
         else:
-            return self.step(6)[0], {}
+            step_return = self.step(6)
+
+        return step_return[0], step_return[4]
 
     def step(self, action):
 
@@ -483,14 +485,14 @@ class RocketLander(gym.Env):
 
         # REWARD -------------------------------------------------------------------------------------------------------
 
-
-        return np.array(state, dtype=np.float32), reward, terminated, truncated, {}
-
-    def render(self, close=False):
         info = {
             'success': success,
             'duration': self.stepnumber,
             }
+
+        return np.array(state, dtype=np.float32), reward, terminated, truncated, info
+
+    def render(self, close=False):
 
         if close:
             if self.viewer is not None:
