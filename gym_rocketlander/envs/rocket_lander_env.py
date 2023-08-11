@@ -308,7 +308,7 @@ class RocketLander(gym.Env):
                 localAnchorA=(i * LEG_AWAY, ROCKET_WIDTH * 0.2),
                 localAnchorB=(0, 0),
                 enableLimit=True,
-                maxMotorTorque=2500.0,
+                maxMotorTorque=7500.0,
                 motorSpeed=-0.05 * i,
                 enableMotor=True,
             )
@@ -445,6 +445,7 @@ class RocketLander(gym.Env):
         )
         terminated = False
         truncated = False
+        success = False
 
         reward = -fuelcost
 
@@ -457,7 +458,7 @@ class RocketLander(gym.Env):
         else:
             # reward shaping
             shaping = -(distance + 0.1*speed + abs(angle) ** 2 + abs(vel_a) ** 2)
-            shaping += (self.legs[0].ground_contact + self.legs[1].ground_contact)
+            shaping += 0.75*(self.legs[0].ground_contact + self.legs[1].ground_contact)
 
             reward += shaping
 
@@ -468,6 +469,7 @@ class RocketLander(gym.Env):
             if self.landed_ticks == FPS:
                 reward = 1000.0
                 terminated = True
+                success = True
 
         if terminated:
             reward += max(-1, 0 - 2 * (speed + distance + abs(angle) + abs(vel_a)))
@@ -481,6 +483,10 @@ class RocketLander(gym.Env):
         return np.array(state, dtype=np.float32), reward, terminated, truncated, {}
 
     def render(self, close=False):
+        info = {
+            'success': success,
+            'duration': self.stepnumber,
+            }
 
         if close:
             if self.viewer is not None:
