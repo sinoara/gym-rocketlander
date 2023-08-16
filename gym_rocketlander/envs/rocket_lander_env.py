@@ -1,4 +1,5 @@
 import numpy as np
+
 import Box2D
 from Box2D.b2 import (
     fixtureDef,
@@ -7,9 +8,13 @@ from Box2D.b2 import (
     distanceJointDef,
     contactListener,
 )
+
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.utils import seeding
+from gymnasium.error import DependencyNotInstalled
+
+import pygame as pg
 
 """
 The objective of this environment is to land a rocket on a ship.
@@ -47,7 +52,7 @@ Continuous control inputs are:
 
 VEL_STATE = True  # Add velocity info to state
 FPS = 60
-SCALE_S = 0.35  # Temporal Scaling, lower is faster - adjust forces appropriately
+SCALE = 0.35  # Temporal Scaling, lower is faster - adjust forces appropriately
 INITIAL_RANDOM = 0.0  # Random scaling of initial velocity, higher is more difficult
 
 START_HEIGHT = 800.0
@@ -56,10 +61,10 @@ START_SPEED = 80.0
 # ROCKET
 MIN_THROTTLE = 0.4
 GIMBAL_THRESHOLD = 0.4
-MAIN_ENGINE_POWER = 4800 * SCALE_S
-SIDE_ENGINE_POWER = 100 / FPS * SCALE_S
+MAIN_ENGINE_POWER = 4800 * SCALE
+SIDE_ENGINE_POWER = 100 / FPS * SCALE
 
-ROCKET_WIDTH = 3.66 * SCALE_S
+ROCKET_WIDTH = 3.66 * SCALE
 ROCKET_HEIGHT = ROCKET_WIDTH / 3.7 * 47.9
 ENGINE_HEIGHT = ROCKET_WIDTH * 0.5
 ENGINE_WIDTH = ENGINE_HEIGHT * 0.7
@@ -78,7 +83,7 @@ SHIP_WIDTH = SHIP_HEIGHT * 40
 # VIEWPORT
 VIEWPORT_H = 720
 VIEWPORT_W = 500
-H = 1.1 * START_HEIGHT * SCALE_S
+H = 1.1 * START_HEIGHT * SCALE
 W = float(VIEWPORT_W) / VIEWPORT_H * H
 
 # SMOKE FOR VISUALS
@@ -115,7 +120,9 @@ class RocketLander(gym.Env):
             "render_fps": FPS,
             }
 
-    def __init__(self, continuous=False):
+    def __init__(self, continuous=False, render_mode='rgb_array'):
+        self.render_mode = render_mode
+
         self._seed()
         self.viewer = None
         self.episode_number = 0
@@ -128,6 +135,10 @@ class RocketLander(gym.Env):
         self.engine = None
         self.ship = None
         self.legs = []
+
+        #
+        self.screen: pygame.Surface = None
+        self.clock = None
 
         high = np.array([1, 1, 1, 1, 1, 1, 1, np.inf, np.inf, np.inf], dtype=np.float32)
         low = -high
@@ -508,26 +519,40 @@ class RocketLander(gym.Env):
             )
             return
 
-        try:
-            import pygame
-            from pygame import gfxdraw
-        except ImportError:
-            raise DependencyNotInstalled(
-                "pygame is not installed, run `pip install gym[box2d]`"
+        if self.screen is None and self.render_mode == "human":
+            pg.init()
+            #pygame.display.init()
+            self.screen = pg.display.set_mode((VIEWPORT_W, VIEWPORT_H))
+
+        if self.clock is None:
+            self.clock = pg.time.Clock()
+
+        # Fill the screen with sky color
+        self.screen.fill((0, 0, 255))
+
+        #pygame.transform.scale(self.surf, (SCALE, SCALE))
+        # Engine
+        self.surf_engine = pg.Surface((ENGINE_WIDTH, ENGINE_HEIGHT))
+        self.surf_engine.fill((102, 102, 102))
+        #pg.transform.scale(self.surf_engine, (SCALE, SCALE))
+
+
+        if self.render_mode == "human":
+            #self.screen.blit(self.surf, (0, 0))
+            self.screen.blit(self.surf_engine, (VIEWPORT_W/2, VIEWPORT_H/2))
+            #pygame.event.pump()
+            self.clock.tick(self.metadata["render_fps"])
+            pg.display.flip()
+
+            return
+
+        if self.render_mode == "rgb_array":
+            return np.transpose(
+                np.array(pg.surfarray.pixels3d(self.surf)), axes=(1, 0, 2)
             )
 
-        if self.screen is None and self.render_mode == "human":
-            pygame.init()
-            pygame.display.init()
-            self.screen = pygame.display.set_mode((VIEWPORT_W, VIEWPORT_H))
-        if self.clock is None:
-            self.clock = pygame.time.Clock()
-
-        self.surf = pygame.Surface((VIEWPORT_W, VIEWPORT_H))
-
-        pygame.transform.scale(self.surf, (SCALE, SCALE))
-        pygame.draw.rect(self.surf, (255, 255, 255), self.surf.get_rect())
-        ######################
+        #return self.viewer.render(return_rgb_array=mode == "rgb_array")
+        return
 
         if self.viewer is None:
 
